@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas</title>
+    <style>
+        .container {
+            width: 80%;
+            border: 1px solid black;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+        }
+        .d-none{
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="objeto_de_aprendizaje">
+       
+       
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script>
+        $(function(){
+            var directorio_oda = "./";
+            var palabras = [
+                ["goodafternoon", "goodbye"],
+                ["hello", "goodmorning"],
+                ["howareyou", "imfine"]
+            ];
+            palabras = palabras.sort( () => .5 - Math.random());
+
+            //Imagenes texto de cada
+            /*var textos = {
+                'hello': 'hellotext',
+                'goodbye': 'goodbyetext',
+                'goodafternoon': 'goodafternoontext',
+                'howareyou': 'howareyoutext',
+                'imfine': 'imfinetext',
+                'thankyou': 'thankyoutext',
+                'mynameis': 'mynameistext'
+            };*/
+                                //Azul                   Verde                Naranja              Rosa                 Cafe                 Cyan               Morado
+            var colores = ["rgb(0, 32, 255)", "rgb(139, 235, 40)", "rgb(224, 133, 0)", "rgb(251, 51, 109)", "rgb(76, 33, 28)", "rgb(108, 255, 227)", "rgb(153, 0, 204)"];
+
+
+            var container = document.querySelector('#objeto_de_aprendizaje');
+            container.style.position = "relative";
+            var altura_container = container.getBoundingClientRect().y;
+            var click_descubrir = new Audio(directorio_oda + 'mp3/exito.mp3');
+            var descubrir_error = new Audio(directorio_oda + 'mp3/error.mp3');
+            var descubrir_ganar = new Audio(directorio_oda + 'mp3/ganar.mp3');
+           
+
+            //######################################
+            //Sacamos medidias iniciales de trabajo
+            var width = container.clientWidth;
+
+            //######################################
+            //Hacemos calculos y funciones correspondientes
+            function calcula_porcentaje(numero, size){
+                if(size == null){
+                    size = width;
+                }
+                return Math.ceil(size * (numero * 0.01));
+            }
+            //dibuja_flecha(0, punto1_click, 90, punto2_click)
+            //dibuja_flecha(0, 0, 90, 1)
+            function dibuja_flecha(fromx, fromy, tox, toy, canvas2, caja, canvas){
+                fromx = calcula_porcentaje(fromx, canvas2.width); //0
+                tox = calcula_porcentaje(tox, canvas2.width);     //
+
+                fromy = calcula_porcentaje(fromy, caja.clientHeight);
+                toy = calcula_porcentaje(toy, caja.clientHeight);
+
+                var headlen = 10;
+                var angle = Math.atan2(toy-fromy,tox-fromx);
+                canvas.save();
+
+                canvas.strokeStyle = colores[Math.floor(Math.random() * 7)];
+
+                canvas.beginPath();
+                canvas.moveTo(fromx, fromy);
+                canvas.lineTo(tox, toy);
+                canvas.lineWidth = 10;
+                canvas.stroke();
+
+                canvas.beginPath();
+                canvas.moveTo(tox, toy);
+                canvas.lineTo(tox-headlen*Math.cos(angle-Math.PI/7),
+                            toy-headlen*Math.sin(angle-Math.PI/7));
+
+                canvas.lineTo(tox-headlen*Math.cos(angle+Math.PI/7),
+                            toy-headlen*Math.sin(angle+Math.PI/7));
+
+                canvas.lineTo(tox, toy);
+                canvas.lineTo(tox-headlen*Math.cos(angle-Math.PI/7),
+                            toy-headlen*Math.sin(angle-Math.PI/7));
+
+                canvas.stroke();
+                canvas.restore();
+            }
+
+            var canvas2= [];
+            var caja   = [];
+            var cantidad_veces_jugada = 0;
+            function pinta_juego(){
+                var canvas = [];
+                var punto1_click = [];
+                var punto2_click = [];
+                var bocina = [];
+                var audios_imagenes_reproducir = [];
+
+                palabras.forEach(function(conjuntoPalabras, indicePlural){
+
+                    caja[indicePlural] = document.createElement('div');
+                    caja[indicePlural].id = "caja_"+indicePlural;
+                    caja[indicePlural].classList.add("d-none");
+                    caja[indicePlural].setAttribute('juegos', conjuntoPalabras.length);
+
+                    //######################################
+                    //Creamos el lienzo donde se dibujaran las flechas
+                    canvas2[indicePlural] = document.createElement('canvas');
+                    canvas2[indicePlural].width = calcula_porcentaje(33);
+                    canvas[indicePlural] = canvas2[indicePlural].getContext("2d");
+                    //######################################
+                    //Creamos la tabla que contendra todo
+                    var tabla = document.createElement('table');
+                    //Asignamos el td que tendra el conjunto de audios
+                    var tr = [];
+                    var coincidencia1 = "";
+                    var coincidencia2 = "";
+                    var audios_acomodar = {};
+                    //---------------------------------------------------
+                    conjuntoPalabras.forEach(function(palabra, indiceSingular, todos){
+                        //Calculos para determinar porcentajes de representacion de puntos
+                        var punto_coordenada_lienzo = 100 / todos.length;
+                        punto_coordenada_lienzo /= 2;
+
+                        //######################################
+                        tr[indiceSingular] = document.createElement('tr');
+
+                        var td1_1 = document.createElement('td');
+                        td1_1.style.width = calcula_porcentaje(20) + "px";
+                        //td1_1.style.height = calcula_porcentaje(33, height)+"px";
+                        td1_1.style.textAlign = "right";
+
+                        //++++++++++++++++++++
+                        //td1_1.append(bocina[indiceSingular])
+                        audios_acomodar[indiceSingular] = {
+                            'palabra': palabra,
+                            'td': td1_1,
+                            'indiceSingular': (indiceSingular * punto_coordenada_lienzo) +
+                                                (punto_coordenada_lienzo * (indiceSingular + 1)),
+                            'indicePlural': indicePlural
+                        };
+
+                        //++++++++++++++++++++
+                        //######################################
+                        //En el segundo td tendra el canvas que contendra las flechas
+                        //######################################
+                        var td3_1 = document.createElement('td');
+                        td3_1.style.width = calcula_porcentaje(33)+"px";
+                        var imagen = new Image();
+                        imagen.id = palabra;
+                        imagen.src = directorio_oda + "img/"+palabra+".png";
+                        imagen.style.width = calcula_porcentaje(32)+"px";
+                        imagen.onclick = function(event){
+
+                            if(punto1_click[indicePlural] !== []){
+                                coincidencia2 = this.id;
+
+                                //Comprobamos si coinciden las palabras
+                                if(coincidencia1 == coincidencia2){
+                                    //Desvanecemos la imagen y mostramos el texto
+                                    this.style.opacity = 0;
+
+                                    //Al hacer clic
+                                    click_descubrir.play();
+                                    punto2_click[indicePlural] = (indiceSingular * punto_coordenada_lienzo) +
+                                    (punto_coordenada_lienzo * (indiceSingular + 1))
+
+                                    dibuja_flecha(
+                                        0,
+                                        punto1_click[indicePlural],
+                                        90,
+                                        punto2_click[indicePlural],
+                                        canvas2[indicePlural],
+                                        caja[indicePlural],
+                                        canvas[indicePlural]
+                                    )
+                                    punto1_click[indicePlural] = [];
+                                    punto2_click[indicePlural] = [];
+                                    this.onclick = null;
+
+                                    //Si adivina la palabra se volvera a reproducir y cambiara la imagen de texto
+                                    //Pero antes se detendra el audio y se volvera a reproducir para crear el efecto de cambio de imagen                                                            
+                                    /*audios_imagenes_reproducir[indicePlural].currentTime = 0; 
+                                    audios_imagenes_reproducir[indicePlural].pause(); 
+                                    audios_imagenes_reproducir[indicePlural].currentTime = 0;
+                                    setTimeout(function(){
+                                        audios_imagenes_reproducir[indicePlural].play();
+                                        console.log("Aqui ando ", audios_imagenes_reproducir[indicePlural])
+                                    }, 800)
+                                    console.log(audios_imagenes_reproducir[indicePlural])*/
+
+                                    cantidad_veces_jugada += 1;
+                                    //Verificamos y continuamos con el juego si acabo las imagenes de ese momento
+                                    if(cantidad_veces_jugada == conjuntoPalabras.length){
+
+                                        var numero_caja_mostrando = parseInt(caja[indicePlural].id.split('_')[1]);
+                                        numero_caja_mostrando += 1;
+
+                                        //Si aun no se acaba el conjunto de array de palabras total
+                                        if(numero_caja_mostrando < palabras.length){
+
+                                            //Aqui aparecera el boton de next para cambiar de pantalla
+                                            var contenedor_boton = document.createElement('div');
+                                            contenedor_boton.style.width = "100%";
+                                            contenedor_boton.style.textAlign = "center";
+                                            var boton_next = document.createElement('button');
+                                            boton_next.classList.add('btn');
+                                            boton_next.classList.add('btn-info');
+                                            boton_next.classList.add('my-2');
+                                            boton_next.classList.add('text-white');
+                                            boton_next.classList.add('btn-sm');
+                                            boton_next.style.margin = "0 auto";
+                                            boton_next.innerHTML = "Siguiente pantalla";
+
+                                            boton_next.onclick = function(){
+                                                //Escondemos y mostramos la siguiente caja
+                                                var siguiente_caja = [];
+                                                /*setTimeout(function(){*/
+                                                    caja[indicePlural].classList.add('d-none');
+                                                    siguiente_caja = $('#caja_'+numero_caja_mostrando)[0];
+                                                    siguiente_caja.classList.remove('d-none')
+                                                /*}, 1300)*/
+
+                                                setTimeout(function(){
+                                                    console.log(2)
+                                                    $('#caja_'+numero_caja_mostrando+' canvas')[0].height = siguiente_caja.clientHeight;
+                                                }, 300)
+                                                cantidad_veces_jugada = 0;
+                                            }
+
+                                            contenedor_boton.append(boton_next);
+                                            caja[indicePlural].append(contenedor_boton);
+
+
+
+
+
+
+                                        }else{
+                                            //############################
+                                            //caja[indicePlural].classList.add('d-none');
+                                            setTimeout(function(){
+                                                var imagen_ganaste = document.createElement('div');
+                                                imagen_ganaste.style.position = 'absolute';
+                                                imagen_ganaste.style.top = '0';
+                                                imagen_ganaste.style.left = '0';
+                                                imagen_ganaste.style.width = '100%';        
+                                                imagen_ganaste.style.height = '100%';        
+                                                imagen_ganaste.style.zIndex = '9999';
+                                                imagen_ganaste.style.background = 'url("'+directorio_oda + 'img/excellent.png")';
+                                                imagen_ganaste.style.backgroundPosition = 'center';
+                                                imagen_ganaste.style.backgroundSize = 'contain';
+                                                imagen_ganaste.style.backgroundRepeat = 'no-repeat';
+
+                                                container.append(imagen_ganaste);
+
+                                                descubrir_ganar.play();
+                                                console.log("Acabaste los juegos")
+                                            }, 2000)
+                                        }
+                                    }
+
+
+                                }else{
+                                    coincidencia1 = '';
+                                    punto1_click[indicePlural] = [];
+                                    descubrir_error.play();
+                                }
+                            }
+                        }
+                        //++++++++++++++++++++
+                        imagen.style.position = "absolute";
+                        imagen.style.width = "100%";
+
+                        imagen.style.top = "0";
+                        imagen.style.left = "0";
+                        imagen.style.zIndex = "99999999";
+                        td3_1.append(imagen)
+
+                        var imagenPalabra_w = new Image();
+                        //##############################################
+                        //##############################################
+                        //##############################################
+                        imagenPalabra_w.src = directorio_oda + "img/"+palabra+"_word.png";
+                        //imagenPalabra_w.src = directorio_oda + "img/EJEMPLO.png";
+                        //imagenPalabra_w.style.filter = "grayscale(1)";
+                        imagenPalabra_w.style.top = "0";
+                        imagenPalabra_w.style.left = "0";
+                        imagenPalabra_w.style.width = "100%";
+
+                        td3_1.style.position = "relative";
+                        td3_1.append(imagenPalabra_w)
+                        //++++++++++++++++++++
+                        if(indiceSingular == 0){
+                            var td2_1 = document.createElement('td');
+                            td2_1.rowSpan = conjuntoPalabras.length;
+                            td2_1.append(canvas2[indicePlural]);
+                            //++++++++++++++++++++
+                            tr[indiceSingular].append(td1_1)
+                            tr[indiceSingular].append(td2_1)
+                            tr[indiceSingular].append(td3_1)
+                            //++++++++++++++++++++
+                        }else{
+                            tr[indiceSingular].append(td1_1)
+                            tr[indiceSingular].append(td3_1)
+                        }
+                    });
+                    //Obejto random de TD y audios
+                    Object.keys(audios_acomodar).sort( () => .5 - Math.random() ).forEach(function(indice, index){
+                        bocina[audios_acomodar[indice]['indiceSingular']] = new Image();
+                        bocina[audios_acomodar[indice]['indiceSingular']].id = audios_acomodar[indice]['palabra'];
+                        bocina[audios_acomodar[indice]['indiceSingular']].src = directorio_oda + "img/bocina.png";
+                        bocina[audios_acomodar[indice]['indiceSingular']].style.width = calcula_porcentaje(10) + "px";
+                        bocina[audios_acomodar[indice]['indiceSingular']].onclick = function(event){
+                            var sonido = new Audio(directorio_oda + "mp3/"+audios_acomodar[indice]['palabra']+".mp3");
+                            audios_imagenes_reproducir[audios_acomodar[indice]['indicePlural']] = sonido;
+                            sonido.play();
+                            punto1_click[indicePlural] = audios_acomodar[index]['indiceSingular'];
+                            coincidencia1 = this.id;
+                        }
+                        audios_acomodar[index]['td'].append(bocina[audios_acomodar[indice]['indiceSingular']]);
+                    });
+                    //---------------------------------------------------
+                    //++++++++++++++++++++
+
+                    tr.forEach(function(trElement){
+                        tabla.append(trElement);
+                    });
+
+                    //canvas2[indicePlural].style.border = "1px solid";
+                    //tabla.border = "2px"
+                    tabla.style.margin = "0 auto"
+                    caja[indicePlural].append(tabla)
+                    //++++++++++++++++++++
+                    /*setTimeout(function(){
+                        canvas2[indicePlural].height = caja[indicePlural].clientHeight
+                    }, 300)*/
+                });
+
+                //caja = caja.sort( () => .5 - Math.random() );
+                caja.forEach(function(cajaElement){
+                    container.append(cajaElement);
+                });
+            }
+            /*###########################################################*/
+
+
+
+            pinta_juego();
+            setTimeout(function(){
+                //Obtenemos el primer elemento y lo mostramos
+                var inicio = $("div[id*='caja_']:first")[0];
+                inicio.classList.remove('d-none')
+                //asignamos tamaño de canvas
+                var cual = inicio.id;
+                $("#"+cual+" canvas")[0].height = inicio.clientHeight
+            }, 200)
+
+        });
+    </script>
+</body>
+</html>
