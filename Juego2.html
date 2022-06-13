@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego 2</title>
+    <link rel="stylesheet" href="./css2/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css">
+    <link rel="icon" href="img/goodafternoon.png">
+</head>
+<body>
+
+    <div id="objeto_de_aprendizaje">
+
+    </div>
+
+
+
+      <script>
+            var imagenesPersonajes = [                
+                [
+                    {                    
+                        id_elemento: "goodafternoon",
+                        imagenNombre: "img/goodafternoon.png",
+                        imagenPalabra: "img/goodafternoon_word.png"
+                    },
+                    {                    
+                        id_elemento: "goodbye",
+                        imagenNombre: "img/goodbye.png",
+                        imagenPalabra: "img/goodbye_word.png"
+                    }
+                ],
+                [    
+                    {                    
+                        id_elemento: "goodmorning",
+                        imagenNombre: "img/goodmorning.png",
+                        imagenPalabra: "img/goodmorning_word.png"
+                    },                                    
+                    {                    
+                        id_elemento: "hello",
+                        imagenNombre: "img/hello.png",
+                        imagenPalabra: "img/hello_word.png"
+                    }
+                ],
+                [
+                    {                    
+                        id_elemento: "howareyou",
+                        imagenNombre: "img/howareyou.png",
+                        imagenPalabra: "img/howareyou_word.png"
+                    },
+                    {                    
+                        id_elemento: "imfine",
+                        imagenNombre: "img/imfine.png",
+                        imagenPalabra: "img/imfine_word.png"
+                    }
+                ]
+            ];
+
+            imagenesPersonajes.sort( () => .5 - Math.random());
+            
+            var directorio_oda = "./";
+            var descubrir_ganar = new Audio(directorio_oda + 'mp3/ganar.mp3');
+            var click_descubrir = new Audio(directorio_oda + 'mp3/exito.mp3');
+            var descubrir_error = new Audio(directorio_oda + 'mp3/error.mp3');
+            
+            const totalDraggableItems = imagenesPersonajes.length;
+            
+
+
+            const juego = document.createElement('div');
+            
+            var draggableElements;
+            var droppableElements;
+            
+            const container = document.querySelector("#objeto_de_aprendizaje");
+
+            var correct = 0;
+            
+            //Empezamos el juego con cada conjunto de palabras
+            imagenesPersonajes.forEach(function(conjuntoImagenes, indiceConjunto){
+                var caja = document.createElement('div');
+                caja.id  = "caja_"+indiceConjunto;
+                if(indiceConjunto != 0){
+                    caja.classList.add('d-none');
+                }
+                
+                var draggableItems = document.createElement('div');
+                draggableItems.classList.add('draggable-items');
+                draggableItems.style.display  = 'flex';
+                draggableItems.style.flexWrap = 'wrap';
+                
+                var matchingPairs = document.createElement('div');
+                matchingPairs.classList.add('matching-pairs');
+                
+                caja.prepend(draggableItems)
+                caja.prepend(matchingPairs)
+                caja.prepend(juego)
+                container.append(caja)
+                
+                initiateGame(conjuntoImagenes, indiceConjunto, draggableItems, matchingPairs);
+            });
+
+            function initiateGame(conjuntoImagenes, indiceConjuntoPalabras, draggableItems, matchingPairs) {
+                
+                var correct = 0;
+                var total_de_cajas_jugadas = 0;
+                
+                const totalMatchingPairs = conjuntoImagenes.length;
+                const randomDraggableBrands = conjuntoImagenes.sort( () => .5 - Math.random());
+                const randomDraggableBrands2 = generateRandomItemsArray(randomDraggableBrands.length, randomDraggableBrands);
+
+                // Create "draggable-items" and append to DOM
+                for (let i = 0; i < randomDraggableBrands2.length; i++) {
+                    draggableItems.insertAdjacentHTML(
+                        "beforeend",
+                        `<img class="draggable" src="${directorio_oda + randomDraggableBrands2[i].imagenPalabra}" draggable="true" id="${randomDraggableBrands2[i].id_elemento}" style="margin: 3px;">`
+                    );
+                }
+
+                // Create "matching-paikrs" and append to DOM
+                var bocina;
+                for (let i = 0; i < conjuntoImagenes.length; i++) {
+                    var imagenVisualYauditiva = document.createElement('img');
+                    imagenVisualYauditiva.src = directorio_oda + conjuntoImagenes[i].imagenNombre;
+                    imagenVisualYauditiva.setAttribute('nombreAudio', conjuntoImagenes[i].id_elemento);                    
+
+                    bocina = document.createElement('img');
+                    bocina.src = directorio_oda + "img/bocina.png";               
+                    bocina.classList.add('bocina');
+                    bocina.id = conjuntoImagenes[i].id_elemento+'_bocina';     
+
+                    matchingPairs.insertAdjacentHTML(
+                        "beforeend",
+                        `<div class="matching-pair">
+                            <div class="imagenConSonido">
+                                ${imagenVisualYauditiva.outerHTML}
+                                ${bocina.outerHTML}
+                            </div>
+                            <span class="droppable" data-brand="${conjuntoImagenes[i].id_elemento}"></span>
+                         </div>`
+                    );
+
+                    document.querySelector("#"+ conjuntoImagenes[i].id_elemento+"_bocina").onclick = function(){                        
+                        var sonido = new Audio(directorio_oda + "mp3/"+conjuntoImagenes[i].id_elemento+".mp3");                        
+                        sonido.play();
+                    }
+                }
+
+                draggableElements = document.querySelectorAll(".draggable");
+                droppableElements = document.querySelectorAll(".droppable");
+
+                draggableElements.forEach((elem) => {
+                    elem.addEventListener("dragstart", dragStart);
+                });
+
+                droppableElements.forEach((elem) => {
+                    elem.addEventListener("dragenter", dragEnter);
+                    elem.addEventListener("dragover", dragOver);
+                    elem.addEventListener("dragleave", dragLeave);
+                    elem.addEventListener("drop", function (event) {
+                        
+                        event.preventDefault();
+                        event.target.classList.remove("droppable-hover");
+                        const imagenPalabra = event.dataTransfer.getData("text");
+                        const droppableElementBrand = event.target.getAttribute("data-brand");
+                        const isCorrectMatching = imagenPalabra === droppableElementBrand;
+                        
+                        if (isCorrectMatching) {
+                            setTimeout(function(){                                
+                                var clickEvent = new Event('click');                                
+                                document.querySelector("#"+imagenPalabra+"_bocina").dispatchEvent(clickEvent);
+                            }, 500);
+        
+                            const draggableElement = document.getElementById(imagenPalabra);                            
+                            event.target.classList.add("dropped");
+                            draggableElement.classList.add("dragged");
+                            draggableElement.setAttribute("draggable", "false");
+                            setTimeout(function(){
+                                click_descubrir.play();
+                            }, 400);
+                            event.target.append(draggableElement);
+                            correct++;
+                        }else{
+                            setTimeout(function(){
+                                descubrir_error.play();
+                            }, 300);
+                        }
+                        
+                        //Verificamos para ver si ya acabo el juego 
+                        /*console.log("totalDraggableItems: ",totalDraggableItems)
+                        console.log("conjuntoImagenes.length: ",conjuntoImagenes.length)
+                        console.log("totalMatchingPairs: ",totalMatchingPairs)
+                        console.log("correct: ",correct)*/
+
+                        //Cuando acaba con el conjunto de palabras se oculta y se muestra otro
+                        
+                        if (correct === totalMatchingPairs ){
+                            total_de_cajas_jugadas++;
+                            correct = 0;
+
+                            if(total_de_cajas_jugadas < totalDraggableItems){
+                                setTimeout(function(){
+                                    document.querySelector("#caja_"+indiceConjuntoPalabras).classList.add('d-none');
+                                    document.querySelector("#caja_"+total_de_cajas_jugadas).classList.remove('d-none');                            
+                                }, 1500);
+                                
+                            }else{
+                                console.log("Acabaste ")
+                                setTimeout(function(){
+                                    var imagen_ganaste = document.createElement('div');
+                                    imagen_ganaste.style.position = 'absolute';
+                                    imagen_ganaste.style.top = '0';
+                                    imagen_ganaste.style.left = '0';
+                                    imagen_ganaste.style.width = '100%';        
+                                    imagen_ganaste.style.height = '100%';        
+                                    imagen_ganaste.style.zIndex = '9999';
+                                    imagen_ganaste.style.background = 'url("'+directorio_oda + 'img/excellent.png")';
+                                    imagen_ganaste.style.backgroundPosition = 'center';
+                                    imagen_ganaste.style.backgroundSize = 'contain';
+                                    imagen_ganaste.style.backgroundRepeat = 'no-repeat';
+
+                                    container.append(imagen_ganaste);
+
+                                    descubrir_ganar.play();
+                                    console.log("Acabaste los juegos")
+                                }, 2000)
+                            }
+                            
+                        }
+                      
+                    });
+                });
+            }
+
+            // Drag and Drop Functions
+            //Events fired on the drag target
+            function dragStart(event) {                
+                event.dataTransfer.setData("text", event.target.id); // or "text/plain"
+            }
+
+            //Events fired on the drop target
+            function dragEnter(event) {
+                if (event.target.classList &&
+                    event.target.classList.contains("droppable") &&
+                    !event.target.classList.contains("dropped")) 
+                {
+                    event.target.classList.add("droppable-hover");
+                }
+            }
+
+            function dragOver(event) {
+                if (event.target.classList &&
+                    event.target.classList.contains("droppable") &&
+                    !event.target.classList.contains("dropped")) 
+                {
+                    event.preventDefault();
+                }
+            }
+
+            function dragLeave(event) {
+                if (event.target.classList &&
+                    event.target.classList.contains("droppable") &&
+                    !event.target.classList.contains("dropped")) {
+                    event.target.classList.remove("droppable-hover");
+                }
+            }
+
+            function generateRandomItemsArray(n, originalArray) {
+                let res = [];
+                let clonedArray = [...originalArray];
+                if(n>clonedArray.length) n=clonedArray.length;
+                for(let i=1; i<=n; i++) {
+                  const randomIndex = Math.floor(Math.random()*clonedArray.length);
+                  res.push(clonedArray[randomIndex]);
+                  clonedArray.splice(randomIndex, 1);
+                }
+                return res;
+            }
+      </script>
+</body>
+</html>
